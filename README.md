@@ -167,23 +167,7 @@ const edits: MaterialEdit[] = useMemo(() => {
 
 ---
 
-## 7) WebXR notes (since you force WebXR)
-
-- Use **HTTPS**. For phones: expose Vite with a **public HTTPS URL** (Cloudflare Tunnel/ngrok) or trusted local cert.
-- If embedded in an iframe: set `allow="xr-spatial-tracking"`.
-- Button guard (optional):
-  ```tsx
-  const [canAR, setCanAR] = useState(false);
-  useEffect(() => {
-    const t = setInterval(() => setCanAR(Boolean(viewerRef.current?.canActivateAR?.())), 500);
-    return () => clearInterval(t);
-  }, [active?.glbUrl]);
-  <button onClick={()=>viewerRef.current?.openAR()} disabled={!canAR}>在 AR 中查看</button>
-  ```
-
----
-
-## 8) Troubleshooting
+## 7) Troubleshooting
 
 - **No material changes:** GLB material names don’t match `appliesToMaterials`. Inspect via console/CLI.
 - **Textures not applied:** check 404s (`/maps/...`), and CORS if loading from another origin.
@@ -191,7 +175,3 @@ const edits: MaterialEdit[] = useMemo(() => {
 - **Performance:** keep GLB small; use **KTX2** textures and **Draco/Meshopt** compression.
 
 ---
-
-## 9) Optional: model-side variants
-
-If you need variants in **native AR packs** too, export **`KHR_materials_variants`** in your GLB and set a `variantName` instead of runtime edits. For WebXR-only, runtime edits are usually enough.
