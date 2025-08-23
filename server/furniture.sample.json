@@ -10,7 +10,7 @@
     "unit": "Stk",
     "color": "Grau",
     "version": "1.0.0",
-    "storagePath": "models/2301ABO01/1.0.0/2301ABO01.glb",
+    "storagePath": "/models/Test/_2302ABO/0.0.1/2302ABO01.glb",
     "glbUrl": "http://localhost:7071/models/Test/_2302ABO/0.0.1/2302ABO01.glb"
   },
   {
@@ -24,7 +24,7 @@
     "unit": "Stk",
     "color": "Weiß",
     "version": "1.0.0",
-    "storagePath": "models/2301ALB01/1.0.0/2301ALB01.glb",
+    "storagePath": "/models/Test/_2302ALB/0.0.1/2302ALB01.glb",
     "glbUrl": "http://localhost:7071/models/Test/_2302ALB/0.0.1/2302ALB01.glb"
   },
   {
@@ -38,7 +38,7 @@
     "unit": "Stk",
     "color": "Anthrazit",
     "version": "1.0.0",
-    "storagePath": "models/2301ALB02/1.0.0/2301ALB02.glb",
+    "storagePath": "/models/Test/_2302ALB/0.0.1/2302ALB02.glb",
     "glbUrl": "http://localhost:7071/models/Test/_2302ALB/0.0.1/2302ALB02.glb"
   },
   {
@@ -52,7 +52,7 @@
     "unit": "Stk",
     "color": "Schwarz",
     "version": "1.0.0",
-    "storagePath": "models/2301BAB01/1.0.0/2301BAB01.glb",
+    "storagePath": "/models/Test/_2302BAB/0.0.1/2302BAB01.glb",
     "glbUrl": "http://localhost:7071/models/Test/_2302BAB/0.0.1/2302BAB01.glb"
   },
   {
@@ -66,7 +66,7 @@
     "unit": "Stk",
     "color": "Weiß",
     "version": "1.0.0",
-    "storagePath": "models/2301BAB02/1.0.0/2301BAB02.glb",
+    "storagePath": "/models/Test/_2302BAB/0.0.2/2302BAB02_V2.glb",
     "glbUrl": "http://localhost:7071/models/Test/_2302BAB/0.0.2/2302BAB02_V2.glb"
   },
   {
@@ -80,7 +80,7 @@
     "unit": "Stk",
     "color": "Schwarz",
     "version": "1.0.0",
-    "storagePath": "models/2301BAB03/1.0.0/2301BAB03.glb",
+    "storagePath": "/models/Test/_2302BAB/0.0.1/2302BAB01.glb",
     "glbUrl": "http://localhost:7071/models/Test/_2302BAB/0.0.1/2302BAB01.glb"
   }
 ]
