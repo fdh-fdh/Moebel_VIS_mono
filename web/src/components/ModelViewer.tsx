@@ -9,7 +9,7 @@ import React, {
 
 /** 运行时材质编辑（scene-graph API） */
 export type MaterialEdit = {
-  /** 目标材质名列表（需与 GLB 中材质名一致，如 "Seat", "Legs"） */
+  /** 目标材质名列表（需与 GLB 中材质名一致，如 "Seat", "Legs"）。为空则跳过，防止整模叠加 */
   appliesToMaterials?: string[];
   baseColorHex?: string;         // "#RRGGBB"
   metallic?: number;             // 0..1
@@ -23,11 +23,11 @@ export type MaterialEdit = {
 export type ModelViewerHandle = {
   /** 调起 WebXR AR（相当于 <model-viewer>.activateAR()） */
   openAR: () => void;
-  /** 当前环境是否可调用 AR（<model-viewer>.canActivateAR 存在即认为可用） */
+  /** 是否可以激活 AR（存在 canActivateAR 即认为可用） */
   canActivateAR: () => boolean;
   /**
    * 导出当前场景信息：材质名、mesh→材质映射、可用变体列表
-   * 便于调试/生成 slotSpec
+   * 用于调试/生成 slotSpec
    */
   dumpScene: () => Promise<{
     materials: string[];
@@ -41,7 +41,7 @@ type Props = {
   iosSrc?: string;               // 可选：USDZ（iOS Quick Look）
   alt?: string;
 
-  /** 材质变体名（GLB 内含 KHR_materials_variants 时可用） */
+  /** 材质变体名（GLB 含 KHR_materials_variants 时可用） */
   variantName?: string;
 
   /** 运行时材质编辑（不依赖 KHR 扩展） */
@@ -54,7 +54,7 @@ type Props = {
   arPlacement?: "floor" | "wall";
   xrEnvironment?: boolean;
 
-  // Viewer UX
+  // Viewer 交互与渲染
   autoRotate?: boolean;
   cameraControls?: boolean;
   exposure?: number | string;
@@ -69,16 +69,22 @@ type Props = {
   onLoad?: (ev: Event) => void;
   onError?: (ev: Event) => void;
 
-  /** 可选：显示右下角调试面板（材质/网格/变体） */
+  /** 可选：右下角调试面板（材质/网格/变体） */
   debug?: boolean;
 };
 
+/** Hex -> RGBA [0..1] */
 function hexToRGBA(hex: string): [number, number, number, number] {
   const h = hex.replace("#", "");
   const r = parseInt(h.slice(0, 2), 16) / 255;
   const g = parseInt(h.slice(2, 4), 16) / 255;
   const b = parseInt(h.slice(4, 6), 16) / 255;
   return [r, g, b, 1];
+}
+
+/** 自定义元素是否“升级”成功（v3 API 可用） */
+function isUpgraded(el: any) {
+  return el && typeof el.updateComplete !== "undefined";
 }
 
 const ModelViewer = forwardRef<ModelViewerHandle, Props>(function ModelViewer(
@@ -111,17 +117,21 @@ const ModelViewer = forwardRef<ModelViewerHandle, Props>(function ModelViewer(
 ) {
   const elRef = useRef<any>(null);
 
-  // 调试面板用到的状态（可选）
+  // 调试面板数据
   const [dbgMaterials, setDbgMaterials] = useState<string[]>([]);
   const [dbgMeshes, setDbgMeshes] = useState<{ name: string; materials: (string | null)[] }[]>([]);
   const [dbgVariants, setDbgVariants] = useState<string[]>([]);
 
+  // 依赖数组里的 JSON.stringify 会触发 esbuild 的报错；先在外面算好字符串 key
+  const editsKey = JSON.stringify(edits ?? []);
+
+  /** 对外暴露的方法 */
   useImperativeHandle(ref, () => ({
     openAR: () => elRef.current?.activateAR?.(),
     canActivateAR: () => !!elRef.current?.canActivateAR,
     dumpScene: async () => {
       const el = elRef.current as any;
-      if (!el) return { materials: [], meshes: [], variants: [] };
+      if (!isUpgraded(el)) return { materials: [], meshes: [], variants: [] };
       await el.updateComplete;
 
       const materials: string[] = (el.model?.materials ?? []).map((m: any) => m.name);
@@ -135,7 +145,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, Props>(function ModelViewer(
     },
   }));
 
-  /** 统一绑定外部 onLoad/onError（不做内部 console） */
+  /** 绑定外部 onLoad/onError */
   useEffect(() => {
     const el = elRef.current;
     if (!el) return;
@@ -149,83 +159,86 @@ const ModelViewer = forwardRef<ModelViewerHandle, Props>(function ModelViewer(
     };
   }, [onLoad, onError, src]);
 
-  /** 变体切换（仅当 GLB 含 KHR_materials_variants 有效） */
+  /** 切换 KHR 变体（如果存在） */
   useEffect(() => {
     const el = elRef.current as any;
-    if (!el) return;
+    if (!isUpgraded(el)) return;
     (async () => {
       await el.updateComplete;
-      if (variantName) {
-        try {
-          el.variantName = variantName;
-        } catch {
-          // 无扩展或无该变体时静默
-        }
-      } else {
-        // 清空时回到默认
-        try {
-          el.variantName = undefined;
-        } catch {}
+      try {
+        el.variantName = variantName ?? undefined;
+      } catch {
+        // 无扩展或无该变体 → 忽略
       }
     })();
   }, [variantName, src]);
 
-  /** 运行时材质编辑（scene-graph API） */
+  /** 运行时材质编辑（v3 兼容；不使用 setTextureInfo） */
   useEffect(() => {
     const applyEdits = async () => {
       const el = elRef.current as any;
-      if (!el || !edits?.length) return;
+      if (!isUpgraded(el) || !edits?.length) return;
       await el.updateComplete;
+
       const model = el.model;
       if (!model) return;
 
       for (const edit of edits) {
-        const targets = model.materials.filter(
-          (m: any) => !edit.appliesToMaterials || edit.appliesToMaterials.includes(m.name)
+        // 关键防护：没有目标材质名则跳过，避免“整模叠加”
+        if (!edit.appliesToMaterials?.length) continue;
+
+        const targets = model.materials.filter((m: any) =>
+          edit.appliesToMaterials!.includes(m.name)
         );
+        if (!targets.length) continue;
 
         for (const mat of targets) {
           const pbr = mat.pbrMetallicRoughness;
 
-          if (edit.baseColorHex) {
-            pbr.setBaseColorFactor(hexToRGBA(edit.baseColorHex));
-          }
+          if (edit.baseColorHex) pbr.setBaseColorFactor(hexToRGBA(edit.baseColorHex));
           if (typeof edit.metallic === "number") pbr.setMetallicFactor(edit.metallic);
           if (typeof edit.roughness === "number") pbr.setRoughnessFactor(edit.roughness);
 
-          // 贴图（可选）
+          // Base Color（v3：setTexture）
           if (edit.baseColorMap) {
-            const tex = await el.createTexture(edit.baseColorMap);
-            pbr.baseColorTexture.setTexture(tex);
-            pbr.baseColorTexture.setTextureInfo({ texCoord: 0 });
+            try {
+              const tex = await el.createTexture?.(edit.baseColorMap);
+              pbr.baseColorTexture?.setTexture?.(tex);
+            } catch {}
           }
+          // Normal（支持 normalScale）
           if (edit.normalMap) {
-            const tex = await el.createTexture(edit.normalMap);
-            pbr.normalTexture.setTexture(tex);
-            pbr.normalTexture.setTextureInfo({
-              texCoord: 0,
-              scale: edit.normalScale ?? 1,
-            });
+            try {
+              const tex = await el.createTexture?.(edit.normalMap);
+              const nt = pbr.normalTexture as any;
+              nt?.setTexture?.(tex);
+              if (typeof edit.normalScale === "number" && nt?.setScale) {
+                nt.setScale(edit.normalScale);
+              }
+            } catch {}
           }
+          // Occlusion (AO)
           if (edit.occlusionMap) {
-            const tex = await el.createTexture(edit.occlusionMap);
-            pbr.occlusionTexture.setTexture(tex);
-            pbr.occlusionTexture.setTextureInfo({ texCoord: 0 });
+            try {
+              const tex = await el.createTexture?.(edit.occlusionMap);
+              pbr.occlusionTexture?.setTexture?.(tex);
+            } catch {}
           }
         }
       }
     };
 
     applyEdits();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src, JSON.stringify(edits)]);
+  }, [src, editsKey]); // 使用预计算的字符串 key，避免直接在依赖里写 JSON.stringify
 
-  /** 调试面板：在加载后采集一次数据 */
+  /** 调试面板：load 后采集一次数据 */
   useEffect(() => {
     if (!debug) return;
+    const el = elRef.current as any;
+    if (!el) return;
+
     const run = async () => {
-      const el = elRef.current as any;
-      if (!el) return;
+      if (!isUpgraded(el)) return;
       await el.updateComplete;
 
       const mats = (el.model?.materials ?? []).map((m: any) => m.name);
@@ -240,9 +253,6 @@ const ModelViewer = forwardRef<ModelViewerHandle, Props>(function ModelViewer(
       setDbgVariants(variants);
     };
 
-    // 监听一次 load
-    const el = elRef.current as any;
-    if (!el) return;
     const onL = () => run();
     el.addEventListener("load", onL);
     return () => el.removeEventListener("load", onL);
@@ -281,7 +291,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, Props>(function ModelViewer(
         ar-placement={enableAR ? (arPlacement as any) : undefined}
         xr-environment={xrEnvironment as any}
         ios-src={iosSrc as any}
-        // Viewer
+        // 交互 & 渲染
         camera-controls={cameraControls as any}
         auto-rotate={autoRotate as any}
         exposure={String(exposure) as any}

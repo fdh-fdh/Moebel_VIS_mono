@@ -255,7 +255,7 @@ const edits: MaterialEdit[] = React.useMemo(() => {
                 // iosSrc={active?.iosUrl} // 若需要 iOS Quick Look 再开启
                 alt={active?.name}
                 enableAR={arEnabled}
-                arModes="webxr"          // ← 强制只用 WebXR
+                arModes="webxr scene-viewer quick-look"         // tolerance
                 arScale="fixed"
                 arPlacement="floor"
                 xrEnvironment
@@ -264,8 +264,8 @@ const edits: MaterialEdit[] = React.useMemo(() => {
                 exposure={1.0}
                 shadowIntensity={1}
                 shadowSoftness={0.9}
-                edits={edits}  
-                debug                    // 可选：右下角调试面板
+                edits={edits}
+                //debug                    // 可选：右下角调试面板
                 onLoad={handleModelLoad}
                 onError={(e) => console.error("model failed to load", e)}
               />
@@ -282,13 +282,14 @@ const edits: MaterialEdit[] = React.useMemo(() => {
             )}
           </div>
         </div>
-        <MaterialsPanel
+       { <MaterialsPanel
             open={materialsOpen}
             onClose={() => setMaterialsOpen(false)}
             slots={slots}
             assignment={assignment}
             onChange={handleAssign}
-          /> 
+          /> }
+          
         {/* right: info card */}
         <div>
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 16, padding: 16 }}>
