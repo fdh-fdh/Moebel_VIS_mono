@@ -242,7 +242,7 @@ const edits: MaterialEdit[] = React.useMemo(() => {
                   onClick={() => setMaterialsOpen(true)}
                   style={{ padding:"6px 10px", borderRadius:8, border:"1px solid #cbd5e1", background:"#fff" }}
                 >
-                  打开材料库
+                  Material Bibliothek
                 </button>
               </div>
             </div>

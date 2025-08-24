@@ -20,7 +20,7 @@ export default function MaterialsPanel({ open, onClose, slots, assignment, onCha
       display:"flex", flexDirection:"column", zIndex:50 }}>
       <div style={{ padding:12, borderBottom:"1px solid #e5e7eb", display:"flex", justifyContent:"space-between" }}>
         <div style={{ fontWeight:600 }}>Material Bibliothek</div>
-        <button onClick={onClose} style={{ border:"1px solid #cbd5e1", borderRadius:8, background:"#fff", padding:"4px 10px" }}>关闭</button>
+        <button onClick={onClose} style={{ border:"1px solid #cbd5e1", borderRadius:8, background:"#fff", padding:"4px 10px" }}>Schließen</button>
       </div>
       <div style={{ padding:12, overflow:"auto", display:"grid", gap:12 }}>
         {slots.map(slot => {
