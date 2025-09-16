@@ -9,9 +9,9 @@ export type SlotSpec = {
 export const CATEGORY_SLOTS: Record<string, SlotSpec[]> = {
   // 例子：你的类别名需要和数据里的 category 对齐（如 "Barhocker"）
   Barhocker: [
-    { id: "Sitze innere", label: "Seat inside", appliesToMaterials: ["seat_cover"], allowedMaterials: ["plastic-blue","leather-black"] },
-    { id: "Sitze äußere", label: "Seat outside", appliesToMaterials: ["seat_back"], allowedMaterials: ["wood-eiche","aluminium"] },
-    { id: "Beine", label: "Legs", appliesToMaterials: ["Leg_frame"], allowedMaterials: ["wood-eiche","aluminium", "Wood-eich"] },
+    { id: "Sitze innere", label: "Seat inside", appliesToMaterials: ["seat_cover"], allowedMaterials: ["leather-schwarz","leather-white","furnishingsfabricsleatherblack","furnishingsfabricsleatherbump"] },
+    { id: "Sitze äußere", label: "Seat outside", appliesToMaterials: ["seat_back"], allowedMaterials: ["wood-eiche","aluminium","leder-schwarz","polster-schwarz"] },
+    { id: "Beine", label: "Legs", appliesToMaterials: ["Leg_frame"], allowedMaterials: ["wood-eiche","aluminium", "Wood-eich","leder-schwarz","stoff-blau"] },
   ],
 };
 
